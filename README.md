@@ -105,8 +105,6 @@ Usage: This script performs the last step of curation and prepares the non-redun
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-You can copy and paste this into your `README.md` file for your repository. Let me know if you need any further adjustments!
-
 
 
 
