@@ -1,6 +1,6 @@
 # COG Database Construction and Curation
 
-This repository contains a set of Python scripts for constructing and curating a non-redundant COG-based protein database from gene data. The scripts process gene data to generate curated databases for metaproteomic analysis, which can be used in microbiome research.
+This repository contains a set of Python scripts for constructing and curating a non-redundant COG-based protein database from a list of COG gene identifiers. These scripts generate refined databases for the metaproteomic analysis of prokaryotic (bacterial) microbial taxa, for the purpose of microbiome related research.
 
 ---
 
@@ -17,12 +17,12 @@ This repository contains a set of Python scripts for constructing and curating a
 
 ## Overview
 
-The purpose of this repository is to provide a pipeline for creating and curating a COG-based protein database. The workflow involves several steps:
+The purpose of this repository is to provide a pipeline for creating and curating a COG-based protein database. This workflow broadly includes the following steps:
 
-1. **Query Gene Data**: Query the UniProt API for genes listed in a CSV or TSV file.
+1. **Initial Gene Query**: Query the UniProt API for genes listed in a CSV or TSV file.
 2. **Filter Results**: Apply filtering steps to generate subsets based on taxonomic relevance.
-3. **Refine Data**: Refine the data to reduce redundancy and prepare it for further analysis.
-4. **Final Curation**: The final dataset is curated for integration into downstream metaproteomic analysis.
+3. **Refine Data**: Refine the data to reduce redundancy.
+4. **Database Construction**: The final database is constructed using the protein sequences for each protein in the refined datasets for integration into downstream metaproteomic analysis.
 
 ---
 
@@ -49,8 +49,9 @@ These packages can be installed using the provided `requirements.txt` file.
 
 2. **Install Dependencies**:
     Navigate to the cloned repository's directory and install the dependencies using pip:
+
     ```bash
-    cd COG-Database
+    cd COGScripts
     pip install -r requirements.txt
 
 ---
@@ -58,26 +59,29 @@ These packages can be installed using the provided `requirements.txt` file.
 ## Usage
 
 ### Running the Pipeline
-The primary script, cogCuration.py, is used to automate the entire COG database construction and curation pipeline. It takes a CSV or TSV file containing gene data as input.
+The primary script, **cogCuration.py**, is used to automate the entire database construction and curation pipeline. It takes a CSV or TSV file containing gene indentifiers as input, see **COG_proteins.csv** for reference.
+
 To use the pipeline, follow these steps:
 
 1. **Prepare Input File**:
-    Create or obtain a CSV or TSV file containing the gene data you wish to query. The file should list gene identifiers that can be used to query the UniProt database.
+    Create or obtain a CSV or TSV file containing the COG genes you wish to query. The file should list gene identifiers that can be used to query the UniProt database.
 2. **Run the Main Script**:
     Execute the cogCuration.py script with the input file as an argument:
+
     ```bash
-    python cogCuration.py path/to/your/input_file.csv
+    python cogCuration.py COG_proteins.csv
 
 The script will:
-- Query gene data using async_geneQuery.py
+- Query the uniprot protein database using async_geneQuery.py
 - Filter results with queryFiltering.py
 - Refine the data using dataRefinement.py
-- Perform final curation using genePetch.py
+- Perform final sequence database construction using genePetch.py
 - The curated database will be saved in the databases directory within the repository.
 
 ### Output
-- A non-redundant COG-based protein database will be created and stored in the databases directory.
-- Intermediate results and filtered datasets will be stored in the subsets directory.
+- A .FASTA containing a non-redundant COG-based protein sequence database will stored in the databases directory.
+- A .CSV containing the RAW query data from the Uniprot protein database in the databases directory.
+- Intermediate .CSV results and filtered datasets will be stored in the subsets directory.
 
 ---
 
