@@ -13,13 +13,8 @@ from colorama import Fore, Style
 
 # Constants
 BASE_URL = "https://www.ncbi.nlm.nih.gov/research/cog/cogcategory/"
-"""Base URL for fetching COG category data from NCBI."""
-
 COG_API_URL = "https://www.ncbi.nlm.nih.gov/research/cog/api/cogdef/?cog="
-"""API URL for fetching gene names associated with COG IDs."""
-
 FILTERED_TAXA_FILE = 'filtered_uniprot_data.tsv'
-"""Output file name for filtered UniProt data."""
 
 def normalize_gene_name(gene_name):
     """
@@ -255,13 +250,6 @@ def filter_uniprot_data(uniprot_tsv_file, taxa_list):
     return filtered_df
 
 async def main(taxa=None, filter_only=False):
-    """
-    Main function to orchestrate the fetching and filtering process.
-
-    Args:
-        taxa (str, optional): Path to the CSV file containing the list of taxa.
-        filter_only (bool, optional): If True, only filter the UniProt data without fetching new data.
-    """
     start_time = time.time()
     categories = ["J", "L", "C", "G", "O", "D", "M"]
     output_file = 'uniprot_data.csv'
