@@ -13,17 +13,39 @@ from colorama import Fore, Style
 
 # Constants
 BASE_URL = "https://www.ncbi.nlm.nih.gov/research/cog/cogcategory/"
+"""Base URL for fetching COG category data from NCBI."""
+
 COG_API_URL = "https://www.ncbi.nlm.nih.gov/research/cog/api/cogdef/?cog="
+"""API URL for fetching gene names associated with COG IDs."""
+
 FILTERED_TAXA_FILE = 'filtered_uniprot_data.tsv'
+"""Output file name for filtered UniProt data."""
 
 def normalize_gene_name(gene_name):
-    """Normalize gene names by removing numeric suffixes."""
+    """
+    Normalize gene names by removing numeric suffixes.
+
+    Args:
+        gene_name (str): The gene name to normalize.
+
+    Returns:
+        str: Normalized gene name, or None if the input is NaN.
+    """
     if pd.isna(gene_name):
         return None
     return re.sub(r'[_\d]+$', '', str(gene_name))
 
 async def fetch_cog_gene_names(session, cog_id):
-    """Fetch Gene Names for a given COG ID from NCBI API."""
+    """
+    Fetch gene names for a given COG ID from the NCBI API.
+
+    Args:
+        session (aiohttp.ClientSession): The aiohttp session.
+        cog_id (str): The COG ID to fetch gene names for.
+
+    Returns:
+        list: List of normalized gene names associated with the COG ID.
+    """
     async with session.get(f"{COG_API_URL}{cog_id}", timeout=10) as response:
         response.raise_for_status()
         data = await response.json()
@@ -32,14 +54,32 @@ async def fetch_cog_gene_names(session, cog_id):
     return []
 
 async def fetch_page(session, url):
-    """Fetch a single page of results asynchronously and parse HTML."""
+    """
+    Fetch a single page of results asynchronously and parse its HTML content.
+
+    Args:
+        session (aiohttp.ClientSession): The aiohttp session.
+        url (str): The URL to fetch.
+
+    Returns:
+        BeautifulSoup: Parsed HTML content of the page.
+    """
     async with session.get(url) as response:
         content = await response.text()
         soup = BeautifulSoup(content, 'html.parser')
         return soup
 
 async def fetch_category_data(session, category):
-    """Fetch and scrape data for a single COG category."""
+    """
+    Fetch and scrape data for a single COG category.
+
+    Args:
+        session (aiohttp.ClientSession): The aiohttp session.
+        category (str): The COG category to fetch data for.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the scraped data, or None if the table is not found.
+    """
     url = BASE_URL + category
     soup = await fetch_page(session, url)
     table = soup.find('table', {'id': 'cog_result_table'})
@@ -55,13 +95,33 @@ async def fetch_category_data(session, category):
     return pd.DataFrame(all_results, columns=headers)
 
 async def fetch_all_categories(categories):
-    """Fetch and scrape all COG categories asynchronously."""
+    """
+    Fetch and scrape data for all COG categories asynchronously.
+
+    Args:
+        categories (list): List of COG categories to fetch.
+
+    Returns:
+        pd.DataFrame: Combined DataFrame containing data from all categories.
+    """
     async with aiohttp.ClientSession() as session:
         all_data = [await fetch_category_data(session, category) for category in categories]
         return pd.concat([df for df in all_data if df is not None], ignore_index=True)
 
 async def fetch_gene_data(session, gene, output_file, retries=3, batch_size=100):
-    """Fetch gene data from UniProt's API for a single gene with pagination."""
+    """
+    Fetch gene data from UniProt's API for a single gene with pagination.
+
+    Args:
+        session (aiohttp.ClientSession): The aiohttp session.
+        gene (str): The gene name to fetch data for.
+        output_file (str): Path to the output file to save the data.
+        retries (int): Number of retry attempts.
+        batch_size (int): Number of records to batch before writing to the file.
+
+    Returns:
+        bool: True if the data was fetched successfully, False otherwise.
+    """
     query_url = f"https://rest.uniprot.org/uniprotkb/search?compressed=true&fields=accession%2Cid%2Cprotein_name%2Corganism_name%2Cgene_primary&format=tsv&query=gene:{gene}&size=500"
     batch_data = []
 
@@ -93,7 +153,14 @@ async def fetch_gene_data(session, gene, output_file, retries=3, batch_size=100)
         return False
 
 async def fetch_all_genes(cog_genes, output_file, max_retries=3):
-    """Fetch data for all COG genes concurrently using asynchronous requests."""
+    """
+    Fetch data for all COG genes concurrently using asynchronous requests.
+
+    Args:
+        cog_genes (list): List of gene names to fetch data for.
+        output_file (str): Path to the output file to save the data.
+        max_retries (int): Maximum number of retry attempts for failed genes.
+    """
     if os.path.exists(output_file):
         os.remove(output_file)
         print(f"Existing output file {output_file} removed.")
@@ -133,7 +200,18 @@ async def fetch_all_genes(cog_genes, output_file, max_retries=3):
             print(f"Failed Genes: {failed_genes}")
 
 def parse_taxa_list(file_path):
-    """Parse a CSV/TSV file containing a list of taxa."""
+    """
+    Parse a CSV/TSV file containing a list of taxa.
+
+    Args:
+        file_path (str): Path to the input file.
+
+    Returns:
+        set: Set of unique taxa names.
+
+    Raises:
+        Exception: If the file cannot be parsed.
+    """
     try:
         df = pd.read_csv(file_path)
         taxa_list = set(df['taxa'].str.strip())
@@ -144,7 +222,19 @@ def parse_taxa_list(file_path):
         raise
 
 def filter_uniprot_data(uniprot_tsv_file, taxa_list):
-    """Load and filter UniProt data by the 'Organism' column, selecting one gene per organism."""
+    """
+    Load and filter UniProt data by the 'Organism' column, selecting one gene per organism.
+
+    Args:
+        uniprot_tsv_file (str): Path to the UniProt TSV file.
+        taxa_list (set): Set of taxa to filter by.
+
+    Returns:
+        pd.DataFrame: Filtered DataFrame, or None if no matching taxa are found.
+
+    Raises:
+        ValueError: If required columns are missing from the UniProt data.
+    """
     print("Filtering UniProt data based on taxa list...")
     uniprot_df = pd.read_csv(uniprot_tsv_file)
 
@@ -165,7 +255,13 @@ def filter_uniprot_data(uniprot_tsv_file, taxa_list):
     return filtered_df
 
 async def main(taxa=None, filter_only=False):
-    """Main function to orchestrate the fetching and filtering process."""
+    """
+    Main function to orchestrate the fetching and filtering process.
+
+    Args:
+        taxa (str, optional): Path to the CSV file containing the list of taxa.
+        filter_only (bool, optional): If True, only filter the UniProt data without fetching new data.
+    """
     start_time = time.time()
     categories = ["J", "L", "C", "G", "O", "D", "M"]
     output_file = 'uniprot_data.csv'
